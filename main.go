@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 
@@ -9,66 +8,56 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-type Command struct {
-	Command string
-	Args    []string
-}
-
-var command Command
+var commands map[string]Command = make(map[string]Command)
 
 func main() {
+	example := newExampleCommand()
+	commands[example.CliCommand.Name] = *example
+
 	// If we don't provide any Arguments, we run the application using huh
 	if len(os.Args) == 1 {
-		if err := initialForm(); err != nil {
+		if err := initialForm(commands); err != nil {
 			log.Fatal(err)
 		}
 	} else {
+		var flatCommands []*cli.Command
+		for _, c := range commands {
+			flatCommands = append(flatCommands, c.CliCommand)
+		}
+
 		app := &cli.App{
-			Commands: []*cli.Command{
-				{
-					Name:    "cmd1",
-					Aliases: []string{"c"},
-					Usage:   "Use cmd1",
-					Action: func(cCtx *cli.Context) error {
-						command.Command = cCtx.Command.Name
-						command.Args = mergeArgs(cCtx.Args())
-						return nil
-					},
-				},
-			},
+			Commands: flatCommands,
 		}
 
 		if err := app.Run(os.Args); err != nil {
 			log.Fatal(err)
 		}
 	}
-
-	fmt.Printf("Executing command %v\n", command)
 }
 
-func mergeArgs(args cli.Args) []string {
-	var argsMerged []string
+func initialForm(commands map[string]Command) error {
+	var action string
 
-	for i := range args.Len() {
-		argsMerged = append(argsMerged, args.Get(i))
-	}
-
-	return argsMerged
-}
-
-func initialForm() error {
 	form := huh.NewForm(
 		huh.NewGroup(
 			huh.NewSelect[string]().
-				Options(
-					huh.NewOption("Option 1", "op1"),
-					huh.NewOption("Option 2", "op2"),
-				).
-				Value(&command.Command),
+				OptionsFunc(func() []huh.Option[string] {
+					var options []huh.Option[string]
+					for _, command := range commands {
+						options = append(options,
+							huh.NewOption(command.CommandKey, command.CliCommand.Name))
+					}
+					return options
+				}, nil).
+				Value(&action),
 		),
 	)
 
 	if err := form.Run(); err != nil {
+		return err
+	}
+
+	if err := commands[action].FormFunc(); err != nil {
 		return err
 	}
 
