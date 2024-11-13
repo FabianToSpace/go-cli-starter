@@ -2,7 +2,7 @@
 
 # Go-CLI-Starter
 
-This is a simple starter setup for a Golang CLI application, that is based on [Cobra](https://github.com/spf13/cobra) and [Huh](https://github.com/charmbracelet/huh) at the same time, to provide a simple CLI approach, while offering interactive forms.
+This is a simple starter setup for a Golang CLI application, that is based on [urfave](https://github.com/urfave) and [Huh](https://github.com/charmbracelet/huh) at the same time, to provide a simple CLI approach, while offering interactive forms.
 
 
 # Getting started
